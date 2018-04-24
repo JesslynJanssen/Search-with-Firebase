@@ -1,4 +1,10 @@
 
+
+//Search with Firebase example
+//Search bar and tableview
+//(c) Jesslyn Janssen
+
+
 import UIKit
 import Firebase
 import FirebaseAuth

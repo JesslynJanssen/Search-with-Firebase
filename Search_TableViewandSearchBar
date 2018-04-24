@@ -1,0 +1,167 @@
+
+import UIKit
+import Firebase
+import FirebaseAuth
+import FirebaseDatabase
+import FirebaseStorage
+
+class SearchVC: UIViewController, UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate {
+
+
+    @IBOutlet weak var tableView: UITableView!
+    
+    @IBOutlet weak var searchBar: UISearchBar!
+    
+    @IBOutlet weak var AddButton: UIBarButtonItem!
+    
+    var username: String!
+    
+    var filteredData = [String]()     //Added    : AnyObject
+    
+    var inSearchMode = false
+    
+    var search: String!
+    
+    override func viewDidLoad() {
+        
+        super.viewDidLoad()
+        
+        self.navigationItem.hidesBackButton = true
+        
+        self.tableView.separatorStyle = .none
+        
+        tableView.delegate = self
+        
+        tableView.dataSource = self
+        
+        searchBar.delegate = self
+        
+        searchBar.returnKeyType = UIReturnKeyType.done
+        
+ 
+    }
+    
+    // MARK: - UITableViewDataSource
+    
+    func numberOfSections(in tableView: UITableView) -> Int {
+        
+        return 1
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        
+        if inSearchMode {
+            
+            return filteredData.count
+            
+        }
+        
+        return 0   // return data.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
+        if let cell = tableView.dequeueReusableCell(withIdentifier: "SearchCell",
+            for: indexPath) as? SearchCell {
+            
+            var username: String!
+          
+            
+            if inSearchMode {
+                
+                
+                
+                username = self.filteredData[indexPath.row]
+              
+               
+                
+            } else {
+                
+                
+                username = ""          //don't want to get and place all usernames in cells  
+             
+            }
+            
+            cell.configureCell(username: username)
+            
+            return cell
+            
+        } else {
+            
+            return UITableViewCell()
+            
+        }
+        
+    }
+    
+    
+ 
+    
+    
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        
+        if searchBar.text == nil || searchBar.text == "" {
+            
+            inSearchMode = false
+            
+            view.endEditing(true)
+            
+            tableView.reloadData()
+            
+        } else {
+            
+            inSearchMode = true
+            
+            
+            search = searchBar.text
+            
+           
+            // here is where we get data and filter data
+           
+            let ref = Database.database().reference()
+            
+            ref.child("users").queryOrdered(byChild: "fullname").queryStarting(atValue: search).queryEnding(atValue: search + "\u{f8ff}").observeSingleEvent(of: .value, with: { (snapshot) in
+                
+                // cast to an array of DataSnapshots
+                
+                self.filteredData.removeAll()   //remove irrelevant values
+             
+                guard let fetchedList = snapshot.children.allObjects as? [DataSnapshot] else { return }
+                
+                // iterate through array, cast value to dictionary
+                
+                for obj in fetchedList {
+                   
+                   
+                    let objDict = obj.value as! [String: AnyObject]
+                    
+                    
+                    let data = objDict["username"] as! String
+      
+                    
+                    self.filteredData.append(data)
+                    
+        
+                    
+                }
+            }) { (err) in
+                print(err)
+   
+            self.tableView.reloadData()
+            
+        }
+            inSearchMode = true
+        
+        tableView.reloadData()
+    }
+    }
+   
+  
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar)  {
+        searchBar.resignFirstResponder()
+        
+    }
+    
+    }
+    

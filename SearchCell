@@ -1,0 +1,87 @@
+//  SearchCell.swift
+//Search with Firebase example
+//
+//  Created by Jesslyn Janssen on 2/15/18.
+//  Copyright © 2018 Jesslyn Janssen. All rights reserved.
+//
+
+import UIKit
+import Firebase
+import FirebaseDatabase
+import FirebaseStorage
+
+class SearchCell: UITableViewCell {
+    
+    @IBOutlet weak var userName: UIButton!
+    @IBOutlet weak var fullName: UILabel!
+    @IBOutlet weak var userImg: UIImageView!
+    
+    
+    
+
+
+    override func awakeFromNib() {
+        
+        super.awakeFromNib()
+       
+    }
+    
+    override func setSelected(_ selected: Bool, animated: Bool) {
+        super.setSelected(selected, animated: animated)
+        
+        // Configure the view for the selected state
+    }
+    
+    func configureCell(username: String) {
+        
+      
+        self.userName.setTitle(username, for: .normal)
+        
+        let dbRef = Database.database().reference().child("users")
+        
+        dbRef.queryOrdered(byChild: "username").queryEqual(toValue: username).observeSingleEvent(of: .value, with: { (snapshot) in
+            
+          guard let fetchedList = snapshot.children.allObjects as? [DataSnapshot] else { return }
+            
+            for obj in fetchedList {
+                
+                let objDict = obj.value as! [String: AnyObject]
+                
+                let thefullname = objDict["fullname"] as! String
+                
+                let Img = objDict["userImg"] as! String
+                
+                self.fullName.text = thefullname
+                
+                
+                //Get user's profile picture 
+                let ref = Storage.storage().reference(forURL: Img)
+                ref.getData(maxSize: (100000000), completion: { (data, error) in
+                    if error != nil {
+                        print("couldn't load image")
+                    } else {
+                        if let imgData = data {
+                            if let img = UIImage(data: imgData){
+                                self.userImg.image = img
+                            }
+                        }
+                    }
+                })
+                
+                
+                
+                
+                
+              
+              
+                
+            }
+        }) { (err) in
+            print(err)
+        }
+        
+     
+     
+    }
+    
+}
